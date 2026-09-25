@@ -6,25 +6,27 @@
 
 source /etc/functions.sh
 source /etc/multipool.conf
-source $STORAGE_ROOT/yiimp/.yiimp.conf
-source $HOME/multipool/yiimp_single/.wireguard.install.cnf
+source "$STORAGE_ROOT/yiimp/.yiimp.conf"
+source "$HOME/multipool/yiimp_single/.wireguard.install.cnf"
 
 # Create main.sh
-echo '#!/usr/bin/env bash
+sudo tee "$STORAGE_ROOT/yiimp/site/crons/main.sh" > /dev/null <<EOF
+#!/usr/bin/env bash
 
-PHP_CLI='"'"''"php -d max_execution_time=120"''"'"'
+PHP_CLI="php -d max_execution_time=120"
 
-DIR='""''"${STORAGE_ROOT}"''""'/yiimp/site/web/
-cd ${DIR}
+DIR="${STORAGE_ROOT}/yiimp/site/web/"
+cd "\${DIR}" || exit 1
 
 date
-echo started in ${DIR}
+echo "started in \${DIR}"
 
 while true; do
-${PHP_CLI} runconsole.php cronjob/run
-sleep 90
+	\${PHP_CLI} runconsole.php cronjob/run
+	sleep 90
 done
-exec bash' | sudo -E tee $STORAGE_ROOT/yiimp/site/crons/main.sh >/dev/null 2>&1
-sudo chmod +x $STORAGE_ROOT/yiimp/site/crons/main.sh
+exec bash
+EOF
+sudo chmod +x "$STORAGE_ROOT/yiimp/site/crons/main.sh"
 
-cd $HOME/multipool/yiimp_single
+cd "$HOME/multipool/yiimp_single" || exit 1

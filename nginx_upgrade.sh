@@ -5,49 +5,43 @@
 #####################################################
 
 source /etc/functions.sh
-source $STORAGE_ROOT/yiimp/.yiimp.conf
-cd $HOME/multipool/yiimp_single
+source /etc/multipool.conf
+source "$STORAGE_ROOT/yiimp/.yiimp.conf"
+PHP_VERSION="${PHP_VERSION:-${MULTIPOOL_DEFAULT_PHP_VERSION:-8.3}}"
+cd "$HOME/multipool/yiimp_single" || exit 1
 
-set -eu -o pipefail
-
-function print_error {
-    read line file <<<$(caller)
-    echo "An error occurred in line $line of file $file:" >&2
-    sed "${line}q;d" "$file" >&2
-}
-trap print_error ERR
-
-if [[ ("$wireguard" == "true") ]]; then
-source $STORAGE_ROOT/yiimp/.wireguard.conf
+if [[ "$wireguard" == "true" ]]; then
+	source "$STORAGE_ROOT/yiimp/.wireguard.conf"
 fi
 
-# NGINX upgrade
-echo -e " Upgrading NGINX...$COL_RESET"
-
-#Grab Nginx key and proper mainline package for distro
-echo "deb http://nginx.org/packages/mainline/ubuntu `lsb_release -cs` nginx" \
-    | sudo tee /etc/apt/sources.list.d/nginx.list >/dev/null 2>&1
-
-sudo curl -fsSL https://nginx.org/keys/nginx_signing.key | sudo apt-key add - >/dev/null 2>&1
-hide_output sudo apt-get update
+# NGINX configuration. The Ubuntu nginx package is used (installed in system.sh).
+echo -e " Configuring NGINX...$COL_RESET"
 apt_install nginx
 
 # Make additional conf directories, move and generate needed configurations.
 sudo mkdir -p /etc/nginx/cryptopool.builders
-sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.old
-sudo cp -r nginx_confs/nginx.conf /etc/nginx/
-sudo cp -r nginx_confs/general.conf /etc/nginx/cryptopool.builders
-sudo cp -r nginx_confs/php_fastcgi.conf /etc/nginx/cryptopool.builders
-sudo cp -r nginx_confs/security.conf /etc/nginx/cryptopool.builders
-sudo cp -r nginx_confs/letsencrypt.conf /etc/nginx/cryptopool.builders
+if [ ! -f /etc/nginx/nginx.conf.old ]; then
+	sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.old
+fi
+sudo install -m 644 nginx_confs/nginx.conf /etc/nginx/nginx.conf
+sudo install -m 644 nginx_confs/general.conf /etc/nginx/cryptopool.builders/general.conf
+sudo install -m 644 nginx_confs/security.conf /etc/nginx/cryptopool.builders/security.conf
+sudo install -m 644 nginx_confs/letsencrypt.conf /etc/nginx/cryptopool.builders/letsencrypt.conf
+sed "s|@PHP_VERSION@|${PHP_VERSION}|g" nginx_confs/php_fastcgi.conf \
+	| sudo tee /etc/nginx/cryptopool.builders/php_fastcgi.conf > /dev/null
 
 # Removing default nginx site configs.
-sudo rm -r /etc/nginx/conf.d/default.conf
-sudo rm -r /etc/nginx/sites-enabled/default*
-sudo rm -r /etc/nginx/sites-available/default*
+sudo rm -f /etc/nginx/conf.d/default.conf
+sudo rm -f /etc/nginx/sites-enabled/default*
+sudo rm -f /etc/nginx/sites-available/default*
 
-echo -e "$GREEN NGINX upgrade complete...$COL_RESET"
+# Don't expose the PHP version in the X-Powered-By header.
+if [ -f "/etc/php/${PHP_VERSION}/fpm/php.ini" ]; then
+	sudo sed -i 's/^;\?expose_php *=.*/expose_php = Off/' "/etc/php/${PHP_VERSION}/fpm/php.ini"
+fi
+
+hide_output sudo nginx -t
+echo -e "$GREEN NGINX configuration complete...$COL_RESET"
 restart_service nginx
-restart_service php7.3-fpm
-set +eu +o pipefail
-cd $HOME/multipool/yiimp_single
+restart_service "php${PHP_VERSION}-fpm"
+cd "$HOME/multipool/yiimp_single" || exit 1

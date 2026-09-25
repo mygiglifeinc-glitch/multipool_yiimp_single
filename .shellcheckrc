@@ -1,0 +1,5 @@
+external-sources=true
+# Scripts source /etc/functions.sh, /etc/multipool.conf and the generated
+# $STORAGE_ROOT/yiimp/*.conf files, which only exist on an installed system,
+# and share variables across sourced files.
+disable=SC1090,SC1091,SC2034,SC2154
