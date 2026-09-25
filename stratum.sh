@@ -36,6 +36,13 @@ cd "$STORAGE_ROOT/yiimp/yiimp_setup/yiimp/stratum" || exit 1
 sudo mkdir -p "$STORAGE_ROOT/yiimp/site/stratum/config"
 sudo cp -a config.sample/. "$STORAGE_ROOT/yiimp/site/stratum/config"
 sudo cp stratum "$STORAGE_ROOT/yiimp/site/stratum"
+# Generator for the Vertcoin verthash.dat the verthash stratum needs (1.2 GB,
+# only created when you want to mine Vertcoin):
+#   cd $STORAGE_ROOT/yiimp/site/stratum && ./verthash_gen verthash.dat
+hide_output sudo make verthash_gen
+sudo cp verthash_gen "$STORAGE_ROOT/yiimp/site/stratum"
+sudo sed -i "s|^verthash_datafile = .*|verthash_datafile = $(sed_escape "$STORAGE_ROOT/yiimp/site/stratum/verthash.dat")|" \
+	"$STORAGE_ROOT/yiimp/site/stratum/config/verthash.conf"
 cd "$STORAGE_ROOT/yiimp/yiimp_setup/yiimp" || exit 1
 sudo cp "$STORAGE_ROOT/yiimp/yiimp_setup/yiimp/blocknotify/blocknotify" "$STORAGE_ROOT/yiimp/site/stratum"
 sudo cp "$STORAGE_ROOT/yiimp/yiimp_setup/yiimp/blocknotify/blocknotify" /usr/bin
