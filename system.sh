@@ -131,7 +131,7 @@ fi
 # PHP extensions. php-memcache/php-imagick are versioned in the Ondrej PPA so
 # they don't pull in a second PHP version.
 PHP_PACKAGES=()
-for ext in fpm common cli gd mysql curl intl pspell sqlite3 tidy xsl xml zip mbstring memcache imagick; do
+for ext in fpm common cli gd mysql curl intl pspell sqlite3 tidy xsl xml zip mbstring bcmath memcache imagick; do
 	PHP_PACKAGES+=("php${PHP_VERSION}-${ext}")
 done
 # opcache is built in from PHP 8.5 and imap was moved out of core in PHP 8.4,
