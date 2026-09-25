@@ -16,7 +16,7 @@ Installation files for yiimp single server
 - PHP is installed from the [Ondrej PHP PPA](https://launchpad.net/~ondrej/+archive/ubuntu/php)
   using the `PHP_VERSION` set in `/etc/multipool.conf` (falls back to the Ubuntu PHP packages on
   releases the PPA does not support yet). MariaDB, nginx and certbot come from Ubuntu.
-- The YiiMP source is cloned from https://github.com/cryptopool-builders/yiimp.git. To install from a
+- The YiiMP source is cloned from https://github.com/mygiglifeinc-glitch/yiimp. To install from a
   fork set `YIIMP_REPO` (and optionally `YIIMP_BRANCH`) in the environment before starting the installer.
 - Database user names and passwords are saved in `$STORAGE_ROOT/yiimp/.my.cnf` (readable by the
   installing user only).
