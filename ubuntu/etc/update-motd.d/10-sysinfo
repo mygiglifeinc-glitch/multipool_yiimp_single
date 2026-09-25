@@ -22,68 +22,58 @@
 # Updated by cryptopool.builders for crypto use...
 #####################################################
 
-date=`date`
-ps -aux | grep "[m]ain" > /dev/null 2>&1
-if [[ "$?" == "0" ]]; then
-        main="running"
-else
-        main="stopped"
-fi
-ps -aux | grep "[b]locks" > /dev/null 2>&1
-if [[ "$?" == "0" ]]; then
-        blocks="running"
-else
-        blocks="stopped"
-fi
-ps -aux | grep "[l]oop2" > /dev/null 2>&1
-if [[ "$?" == "0" ]]; then
-        loop2="running"
-else
-        loop2="stopped"
-fi
-ps -aux | grep "[l]og/debug.log" > /dev/null 2>&1
-if [[ "$?" == "0" ]]; then
-        debug="running"
-else
-        debug="stopped"
-fi
-daemon='/home/crypto-data/wallets'
-site='/home/crypto-data/yiimp/site'
+# shellcheck disable=SC1091
+[ -r /etc/multipool.conf ] && source /etc/multipool.conf
+STORAGE_ROOT=${STORAGE_ROOT:-/home/crypto-data}
+
+date=$(date)
+
+# screen_status PATTERN: "running" if a process matching PATTERN exists.
+screen_status() {
+	if pgrep -f -- "$1" > /dev/null 2>&1; then
+		echo "running"
+	else
+		echo "stopped"
+	fi
+}
+main=$(screen_status "crons/main.sh")
+blocks=$(screen_status "crons/blocks.sh")
+loop2=$(screen_status "crons/loop2.sh")
+debug=$(screen_status "log/debug.log")
+daemon="$STORAGE_ROOT/wallets"
+site="$STORAGE_ROOT/yiimp/site"
 hint1="To view a screen type, screen -r main|loop2|blocks|debug"
 hint2="To detach from a screen type, ctrl+a+d"
-divider===============================
+divider="=============================="
 divider=$divider$divider
 header=" %-7s %-25s %-16s %-15s\n"
 width=50
 RED=$'\033[00;31m'
 GREEN=$'\033[00;32m'
 RESTORE=$'\033[0m'
+
+# status_color STATUS: STATUS in red (stopped) or green (running).
+status_color() {
+	if [[ "$1" == "stopped" ]]; then
+		echo "${RED}$1${RESTORE}"
+	else
+		echo "${GREEN}$1${RESTORE}"
+	fi
+}
 echo "System information as of: $date"
 echo
-/usr/bin/landscape-sysinfo
+[ -x /usr/bin/landscape-sysinfo ] && /usr/bin/landscape-sysinfo
 echo
 echo "YiiMP Information:"
 printf "%$width.${width}s\n" "$divider"
-if [[ $main = stopped ]]; then
-printf "$header" "Main:" $RED$main$RESTORE "Daemon Directory:" $daemon
-else
-printf "$header" "Main:" $GREEN$main$RESTORE "Daemon Directory:" $daemon
-fi
-if [[ $blocks = stopped ]]; then
-printf "$header" "Blocks:" $RED$blocks$RESTORE "YiiMP Directory:" $site
-else
-printf "$header" "Blocks:" $GREEN$blocks$RESTORE "YiiMP Directory:" $site
-fi
-if [[ $loop2 = stopped ]]; then
-printf "$header" "Loop2:" $RED$loop2$RESTORE "Hint: $hint1"
-else
-printf "$header" "Loop2:" $GREEN$loop2$RESTORE "Hint: $hint1"
-fi
-if [[ $debug = stopped ]]; then
-printf "$header" "Debug:" $RED$debug$RESTORE "Hint: $hint2"
-else
-printf "$header" "Debug:" $GREEN$debug$RESTORE "Hint: $hint2"
-fi
+# shellcheck disable=SC2059 # $header is the format string
+printf "$header" "Main:" "$(status_color "$main")" "Daemon Directory:" "$daemon"
+# shellcheck disable=SC2059
+printf "$header" "Blocks:" "$(status_color "$blocks")" "YiiMP Directory:" "$site"
+# shellcheck disable=SC2059
+printf "$header" "Loop2:" "$(status_color "$loop2")" "Hint: $hint1"
+# shellcheck disable=SC2059
+printf "$header" "Debug:" "$(status_color "$debug")" "Hint: $hint2"
 echo
 echo "To start|stop|restart a screen use the following command..."
 echo "screens start|stop|restart main|loop2|blocks|debug"
@@ -97,6 +87,6 @@ echo "BCH qrf2fhk2pfka5k649826z4683tuqehaq2sc65nfz3e"
 echo "ETH 0x6A047e5410f433FDBF32D7fb118B6246E3b7C136"
 echo "LTC MLS5pfgb7QMqBm3pmBvuJ7eRCRgwLV25Nz"
 echo
-/usr/lib/update-notifier/update-motd-reboot-required
-/usr/lib/update-notifier/apt-check --human-readable
+[ -x /usr/lib/update-notifier/update-motd-reboot-required ] && /usr/lib/update-notifier/update-motd-reboot-required
+[ -x /usr/lib/update-notifier/apt-check ] && /usr/lib/update-notifier/apt-check --human-readable
 echo
