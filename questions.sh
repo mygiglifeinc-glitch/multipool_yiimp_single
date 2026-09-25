@@ -218,7 +218,7 @@ PRIMARY_HOSTNAME=$DomainName
 
 # Unless you do some serious modifications this installer will not work with any other repo of yiimp!
 # YIIMP_REPO / YIIMP_BRANCH can be set in the environment to install from a fork.
-YiiMPRepo="${YIIMP_REPO:-https://github.com/cryptopool-builders/yiimp.git}"
+YiiMPRepo="${YIIMP_REPO:-${MULTIPOOL_GITHUB:-https://github.com/mygiglifeinc-glitch}/yiimp.git}"
 if [ -n "${YIIMP_BRANCH:-}" ]; then
 	YiiMPBranch=$YIIMP_BRANCH
 elif [[ "$CoinPort" == "yes" ]]; then
