@@ -4,33 +4,45 @@
 # Created by cryptopool.builders for crypto use...
 #####################################################
 
-source $HOME/multipool/yiimp_single/.wireguard.install.cnf
-source $STORAGE_ROOT/yiimp/.wireguard.conf
+source /etc/functions.sh
 source /etc/multipool.conf
+source "$HOME/multipool/yiimp_single/.wireguard.install.cnf"
+source "$STORAGE_ROOT/yiimp/.wireguard.conf"
 
 clear
 echo -e " Installing WireGuard...$COL_RESET"
-sudo add-apt-repository ppa:wireguard/wireguard -y
-sudo apt-get update -y
-sudo apt-get install wireguard-dkms wireguard-tools -y
-(umask 077 && printf "[Interface]\nPrivateKey = " | sudo tee /etc/wireguard/wg0.conf > /dev/null)
-wg genkey | sudo tee -a /etc/wireguard/wg0.conf | wg pubkey | sudo tee /etc/wireguard/publickey
+# WireGuard is part of the kernel on all supported Ubuntu releases, only the
+# userspace tools are needed.
+hide_output sudo apt-get update
+apt_install wireguard wireguard-tools ufw
+
+if ! sudo test -f /etc/wireguard/wg0.conf; then
+	sudo install -d -m 700 /etc/wireguard
+	wg_private_key=$(wg genkey)
+	wg_conf=$(mktemp)
+	chmod 600 "$wg_conf"
+	cat > "$wg_conf" <<EOF
+[Interface]
+PrivateKey = ${wg_private_key}
+ListenPort = 6121
+SaveConfig = true
+Address = ${DBInternalIP}/24
+EOF
+	sudo install -m 600 -o root -g root "$wg_conf" /etc/wireguard/wg0.conf
+	rm -f "$wg_conf"
+	printf '%s\n' "$wg_private_key" | wg pubkey | sudo tee /etc/wireguard/publickey > /dev/null
+	unset wg_private_key wg_conf
+fi
 
 # Install WireGuard on main server.
-echo "ListenPort = 6121" | hide_output sudo tee -a /etc/wireguard/wg0.conf
-echo "SaveConfig = true" | hide_output sudo tee -a /etc/wireguard/wg0.conf
-echo "Address = ${DBInternalIP}/24" | hide_output sudo tee -a /etc/wireguard/wg0.conf
-cd $HOME
-sudo systemctl start wg-quick@wg0
-sudo systemctl enable wg-quick@wg0
-sudo ufw allow 6121
+hide_output sudo systemctl enable --now wg-quick@wg0
+ufw_allow 6121/udp
 clear
 dbpublic=${PUBLIC_IP}
 mypublic="$(sudo cat /etc/wireguard/publickey)"
 
-echo '  Public Ip: '"${dbpublic}"'
-Public Key: '"${mypublic}"'
-' | sudo -E tee $STORAGE_ROOT/yiimp/.wireguard_public.conf >/dev/null 2>&1;
+printf '  Public Ip: %s\nPublic Key: %s\n' "${dbpublic}" "${mypublic}" \
+	| sudo tee "$STORAGE_ROOT/yiimp/.wireguard_public.conf" > /dev/null
 
 echo -e "$GREEN WireGuard setup completed...$COL_RESET"
-cd $HOME/multipool/yiimp_single
+cd "$HOME/multipool/yiimp_single" || exit 1

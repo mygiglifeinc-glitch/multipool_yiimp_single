@@ -6,41 +6,38 @@
 
 source /etc/functions.sh
 source /etc/multipool.conf
-source $STORAGE_ROOT/yiimp/.yiimp.conf
+source "$STORAGE_ROOT/yiimp/.yiimp.conf"
 
-set -eu -o pipefail
-
-function print_error {
-    read line file <<<$(caller)
-    echo "An error occurred in line $line of file $file:" >&2
-    sed "${line}q;d" "$file" >&2
-}
-trap print_error ERR
-
-if [[ ("$wireguard" == "true") ]]; then
-source $STORAGE_ROOT/yiimp/.wireguard.conf
+if [[ "$wireguard" == "true" ]]; then
+	source "$STORAGE_ROOT/yiimp/.wireguard.conf"
 fi
 
 echo -e " Installing mail system $COL_RESET"
 
 sudo debconf-set-selections <<< "postfix postfix/mailname string ${PRIMARY_HOSTNAME}"
-sudo debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'"
-apt_install mailutils
+sudo debconf-set-selections <<< "postfix postfix/main_mailer_type select Internet Site"
+apt_install postfix mailutils
 
-sudo sed -i 's/inet_interfaces = all/inet_interfaces = loopback-only/g' /etc/postfix/main.cf
-sudo sed -i 's/myhostname =/# myhostname =/g' /etc/postfix/main.cf
-sudo sed -i 's/mydestination/# mydestination/g' /etc/postfix/main.cf
-sudo sed -i '/# mydestination/i mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain' /etc/postfix/main.cf
-sudo sed -i '/# myhostname =/i myhostname = localhost' /etc/postfix/main.cf
+# Only send mail from this machine, never accept mail from the network.
+# shellcheck disable=SC2016 # $myhostname etc. are postfix variables
+hide_output sudo postconf -e \
+	'inet_interfaces = loopback-only' \
+	'myhostname = localhost' \
+	'mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain'
 
-sudo systemctl restart postfix
-whoami=`whoami`
+restart_service postfix
+whoami=$(id -un)
 
-sudo sed -i '/postmaster:    root/a root:          '${SupportEmail}'' /etc/aliases
-sudo sed -i '/root:/a '$whoami':     '${SupportEmail}'' /etc/aliases
-sudo newaliases
+# Forward mail for root and the installing user to the support email.
+for alias_user in root "$whoami"; do
+	if grep -q "^${alias_user}:" /etc/aliases; then
+		sudo sed -i "s|^${alias_user}:.*|${alias_user}:          ${SupportEmail}|" /etc/aliases
+	else
+		echo "${alias_user}:          ${SupportEmail}" | sudo tee -a /etc/aliases > /dev/null
+	fi
+done
+hide_output sudo newaliases
 
-sudo adduser $whoami mail
+sudo usermod -aG mail "$whoami"
 echo -e "$GREEN Mail system complete...$COL_RESET"
-set +eu +o pipefail
-cd $HOME/multipool/yiimp_single
+cd "$HOME/multipool/yiimp_single" || exit 1

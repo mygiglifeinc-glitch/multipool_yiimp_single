@@ -6,18 +6,16 @@
 # Needs to be ran after the first reboot of the system after permissions are set
 #####################################################
 
-source /etc/functions.sh
+source /etc/multipool.conf
 
 sleep 5
-hide_output yiimp checkup
+yiimp checkup > /dev/null 2>&1 || true
 
 # Prevents error when trying to log in to admin panel the first time...
-
-sudo touch $STORAGE_ROOT/yiimp/site/log/debug.log
-sudo chmod 777 $STORAGE_ROOT/yiimp/site/log/.
-sudo chmod 777 $STORAGE_ROOT/yiimp/site/log/debug.log
+# (the log folder has default ACLs so both the web server and the YiiMP
+# screens can write to the files created in it)
+touch "$STORAGE_ROOT/yiimp/site/log/debug.log"
 
 # Delete me no longer needed after it runs the first time
 
-sudo rm -r $STORAGE_ROOT/yiimp/first_boot.sh
-cd $HOME/multipool/yiimp_single
+sudo rm -f "$STORAGE_ROOT/yiimp/first_boot.sh"
