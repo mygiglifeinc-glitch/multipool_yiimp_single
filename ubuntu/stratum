@@ -12,7 +12,7 @@ STRATUM_DIR=$STORAGE_ROOT/yiimp/site/stratum
 # Algos known to this script. Any other algo works too as long as
 # $STRATUM_DIR/config/<algo>.conf exists.
 ALGOS=(sha256 sha256t lbry scrypt timetravel bitcore exosis c11 deep x11 x11evo x12 x13 x15 x16r
-	x16s x17 x22i aergo xevan hmq1725 nist5 x14 quark whirlpool neoscrypt argon2 argon2ddyn
+	x16s x17 x22i aergo xevan hmq1725 nist5 x14 quark whirlpool neoscrypt argon2ddyn
 	scryptn allium lbk3 lyra2 lyra2v2 lyra2z jha qubit zr5 skein sib keccak keccakc hex
 	skein2 dmdgr myrgr blake blakecoin decred vanilla blake2s penta rainforest luffa m7m
 	veltor velvet vitalium yescrypt yescryptR16 yescryptR32 bastion hsr phi phi2 polytimos
@@ -24,6 +24,7 @@ declare -A ALGO_CONFIG=(
 	[dmdgr]=dmd-gr
 	[myrgr]=myr-gr
 	[argon2ddyn]=argon2d-dyn
+	[neoscrypt]=neo
 )
 
 start_stratum() {

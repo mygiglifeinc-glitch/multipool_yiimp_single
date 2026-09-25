@@ -74,6 +74,10 @@ STRATUM_DIR=$STORAGE_ROOT/yiimp/site/stratum
 
 # screen name / stratum config (algo) name. Algos without a config file are skipped.
 while read -r screen_name algo; do
+	# verthash needs its 1.2 GB data file (create it with verthash_gen)
+	if [ "$algo" = verthash ] && [ ! -f "$STRATUM_DIR/verthash.dat" ]; then
+		continue
+	fi
 	if [ -f "$STRATUM_DIR/config/${algo}.conf" ]; then
 		screen -dmS "$screen_name" bash "$STRATUM_DIR/run.sh" "$algo"
 	fi
@@ -123,13 +127,42 @@ sib sib
 m7m m7m
 veltor veltor
 velvet velvet
-argon2 argon2
 groestl groestl
 skunk skunk
 phi1612 phi1612
 hsr hsr
 yescryptr16 yescryptR16
 x16r x16r
+x16rv2 x16rv2
+x21s x21s
+x22i x22i
+x25x x25x
+allium allium
+lyra2v3 lyra2v3
+lyra2z330 lyra2z330
+argon2d-dyn argon2d-dyn
+argon2d-crds argon2d-crds
+yespower yespower
+yespowerR16 yespowerR16
+yespowerTIDE yespowerTIDE
+yespowerSUGAR yespowerSUGAR
+yespowerADVC yespowerADVC
+yespowerLTNCG yespowerLTNCG
+yespowerMGPC yespowerMGPC
+yespowerARWN yespowerARWN
+yespowerIC yespowerIC
+yespowerLITB yespowerLITB
+cpupower cpupower
+power2b power2b
+yescryptR8 yescryptR8
+yescryptR32 yescryptR32
+sha512256d sha512256d
+sha3-256t sha3-256t
+verthash verthash
+ghostrider ghostrider
+mike mike
+minotaurx minotaurx
+flex flex
 ALGOS
 EOF
 sudo chmod 755 "$STORAGE_ROOT/yiimp/starts/stratum.start.sh"
