@@ -26,9 +26,6 @@ hide_output sudo make
 cd "$STORAGE_ROOT/yiimp/yiimp_setup/yiimp/stratum/iniparser" || exit 1
 hide_output sudo make
 cd "$STORAGE_ROOT/yiimp/yiimp_setup/yiimp/stratum" || exit 1
-# Build fix for current compilers (GCC 11+ reject arrays of the 64 byte aligned
-# blake2 state typedefs): put the alignment on the struct instead.
-sudo sed -i -E 's/^ALIGN\( *64 *\) typedef struct/typedef struct ALIGN(64)/' sha3/blake2s.h sha3/blake2b.h
 if [[ "$AutoExchange" == "yes" ]]; then
 	sudo sed -i 's/CFLAGS += -DNO_EXCHANGE/#CFLAGS += -DNO_EXCHANGE/' "$STORAGE_ROOT/yiimp/yiimp_setup/yiimp/stratum/Makefile"
 fi
